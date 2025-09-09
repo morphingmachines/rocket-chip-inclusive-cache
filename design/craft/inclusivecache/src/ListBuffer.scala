@@ -79,8 +79,14 @@ class ListBuffer[T <: Data](params: ListBufferParameters[T]) extends Module
   val pop_valid = valid(io.pop.bits)
 
   // Bypass push data to the peek port
-  io.data := (if (!params.bypass) data.read(pop_head) else Mux(!pop_valid, io.push.bits.data, data.read(pop_head)))
-  io.valid := (if (!params.bypass) valid else (valid | valid_set))
+  //io.data := (if (!params.bypass) data.read(pop_head) else Mux(!pop_valid, io.push.bits.data, data.read(pop_head)))
+  //io.valid := (if (!params.bypass) valid else (valid | valid_set))
+  val req_data_wire = (if (!params.bypass) data.read(pop_head) else Mux(!pop_valid, io.push.bits.data, data.read(pop_head)))
+  val req_val_wire = (if (!params.bypass) valid else (valid | valid_set))
+  val validBitsWidth = io.valid.getWidth
+  val req_valid_reg = RegInit(0.U(validBitsWidth.W))
+  io.valid := req_val_wire
+  io.data := RegNext(req_data_wire)
 
   // It is an error to pop something that is not valid
   assert (!io.pop.fire || (io.valid)(io.pop.bits))
